@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>generug</title>
+    <style type="text/css">
+      body {
+         text-align: center;
+         font-family: Helvetica, Arial, sans-serif;
+      }
+
+      h1, h3 {
+        margin: 30px;
+      }
+
+      h3 {
+        color: #999;
+      }
+
+      canvas {
+        margin:30px auto;
+        background:#fff;
+        border:#000 solid 2px;
+      }
+
+      #downloadLink {
+        background: #09c;
+        color: #fff;
+      }
+
+      #regenerateLink {
+        background: #f0f0f0;
+        color: #999;
+      }
+
+      .buttons {
+        display: block;
+      }
+
+      .buttons a {
+        margin: 10px;
+        width: 120px;
+        display: inline-block;
+        padding: 15px 30px;
+        background: #f0f0f0;
+        color: #999;
+        border-radius: 5px;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>generug&trade;</h1>
+    <h3>mint rare&trade; and exotic&trade; rugs</h3>
+    <canvas id="canvas"></canvas>
+    <div class="buttons">
+      <a id="regenerateLink">Remint</a><a id="downloadLink" download="generug.png">Download rug</a>
+    </div>
+    <script type="text/javascript">
+      // Get the canvas element from the DOM
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+
+// Set canvas size
+const pixelSize = 10;
+const rugWidth = 13;
+const rugHeight = 20;
+canvas.width = 512;
+canvas.height = 512;
+let running = false;
+const rugXMid = canvas.width/2 - pixelSize/2;
+const rugYMid = canvas.height/2 - pixelSize/2;
+
+// Function to draw a pixel at given coordinates with specified color
+function drawPixel(x, y, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y, pixelSize, pixelSize);
+}
+
+/* let colors = ["#00303b","#ff7777","#ffce96", "#f1f2da"]; */
+
+// Function to generate the pixel art pattern based on a SHA-256 hash
+
+function generateBatch() {
+  if(!running) {
+    running = true;
+    for(let i = 0; i<300; i++) {
+      setTimeout(() => {
+        generatePixelArt(generateRandomHex());
+      }, i)
+    }
+  }
+	running = false;
+}
+function generatePixelArt(hash) {
+  const data = new Uint8Array(hash.match(/.{2}/g).map(byte => parseInt(byte, 16)));
+  let pixels = [];
+ 	let colors = hash.match(/.{6}/g).map(m => "#" + m);
+  ctx.fillStyle = colors[0];
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillStyle = `rgba(255,255,255,0.9)`;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  for (let x = 0; x < rugWidth; x++) {
+    for (let y = 0; y < rugHeight; y++) {
+      const color = x == rugWidth-1 ? colors[0] : colors[(x * y * data[x] % colors.length)];
+      const baseX = x * pixelSize;
+      const baseY = y * pixelSize;
+    
+      drawPixel(rugXMid - baseX, rugYMid - baseY, color);
+      drawPixel(rugXMid + baseX, rugYMid + baseY, color);
+      drawPixel(rugXMid - baseX, rugYMid + baseY, color);
+      drawPixel(rugXMid + baseX, rugYMid - baseY, color);
+    }
+    const trimColor = colors[x % 2];
+    if(x%2==0) {
+    	drawPixel(rugXMid - x*pixelSize, rugYMid - (rugHeight+1) * pixelSize,trimColor);
+			drawPixel(rugXMid + x*pixelSize, rugYMid - (rugHeight+1) * pixelSize,trimColor);  
+    	drawPixel(rugXMid - x*pixelSize, rugYMid + (rugHeight+1) * pixelSize,trimColor);
+			drawPixel(rugXMid + x*pixelSize, rugYMid + (rugHeight+1) * pixelSize,trimColor);  
+    }
+    drawPixel(rugXMid + x*pixelSize, rugYMid - (rugHeight-1) * pixelSize,colors[0]);
+    drawPixel(rugXMid - x*pixelSize, rugYMid - (rugHeight-1) * pixelSize,colors[0]);
+    drawPixel(rugXMid + x*pixelSize, rugYMid + (rugHeight-1) * pixelSize,colors[0]);
+    drawPixel(rugXMid - x*pixelSize, rugYMid + (rugHeight-1) * pixelSize,colors[0]);
+    drawPixel(rugXMid + x*pixelSize, rugYMid - (rugHeight) * pixelSize,trimColor);
+    drawPixel(rugXMid - x*pixelSize, rugYMid - (rugHeight) * pixelSize,trimColor);
+    drawPixel(rugXMid + x*pixelSize, rugYMid + (rugHeight) * pixelSize,trimColor);
+    drawPixel(rugXMid - x*pixelSize, rugYMid + (rugHeight) * pixelSize,trimColor);
+  }
+  const color = colors[(x * y * data[x] % colors.length)];
+  for (let x = 0; x < rugWidth; x++) {
+  	drawPixel(canvas.width/2 - pixelSize/2 - x+pixelSize, canvas.height/2 - pixelSize/2 - rugHeight+1, color);
+  }
+  
+  ctx.scale(1, 2/3); 
+}
+
+function generateRandomHex() {
+  const randomBytes = new Uint8Array(32);
+  crypto.getRandomValues(randomBytes);
+
+  let hexString = '';
+  for (let i = 0; i < randomBytes.length; i++) {
+    const hex = randomBytes[i].toString(16).padStart(2, '0');
+    hexString += hex;
+  }
+
+  return hexString;
+}
+
+function download() {
+    var dt = canvas.toDataURL('image/png');
+    this.href = dt;
+};
+downloadLink.addEventListener('click', download, false);
+
+function regenerate() {
+	generateBatch();
+};
+regenerateLink.addEventListener('click', regenerate, false);
+
+generateBatch()
+    </script>
+  </body>
+</html>
